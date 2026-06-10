@@ -264,11 +264,26 @@ install_packages() {
 }
 
 main() {
-    echo "======================================"
-    echo "  Ashking's Dotfiles Bootstrap"
-    echo "======================================"
-    echo "Repo: $DOTFILES_DIR"
-    echo "Log:  $LOG_FILE"
+    cat << 'EOF'
+   ┌─────────────────────────────────────────────┐
+   │                    █████                     │
+   │                   ██   ██                    │
+   │                   ███████                    │
+   │                   ██   ██                    │
+   │                   ██   ██                    │
+   │                                             │
+   │    ██████  ███████  ████████ ███████         │
+   │    ██   ██ ██          ██    ██              │
+   │    ██   ██ █████       ██    █████           │
+   │    ██   ██ ██          ██    ██              │
+   │    ██████  ██          ██    ███████         │
+   │                                             │
+   │        Automated Environment Setup           │
+   └─────────────────────────────────────────────┘
+EOF
+    echo ""
+    echo "  Repo: $DOTFILES_DIR"
+    echo "  Log:  $LOG_FILE"
     echo ""
 
     SECONDS=0

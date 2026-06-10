@@ -4,9 +4,23 @@ set -euo pipefail
 REPO_URL="https://github.com/Ashking-tech/dotfiles.git"
 DOTFILES_DIR="$HOME/dotfiles"
 
-echo "======================================"
-echo "  Ashking's Dotfiles Installer"
-echo "======================================"
+cat << 'EOF'
+   ┌─────────────────────────────────────────────┐
+   │                    █████                     │
+   │                   ██   ██                    │
+   │                   ███████                    │
+   │                   ██   ██                    │
+   │                   ██   ██                    │
+   │                                             │
+   │    ██████  ███████  ████████ ███████         │
+   │    ██   ██ ██          ██    ██              │
+   │    ██   ██ █████       ██    █████           │
+   │    ██   ██ ██          ██    ██              │
+   │    ██████  ██          ██    ███████         │
+   │                                             │
+   │        Automated Environment Setup           │
+   └─────────────────────────────────────────────┘
+EOF
 
 if ! command -v git &>/dev/null; then
     echo "ERROR: git is required. Please install it first."
