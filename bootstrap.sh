@@ -80,6 +80,20 @@ install_omz() {
     done
 }
 
+set_default_shell() {
+    local zsh_path
+    zsh_path="$(command -v zsh)" || return
+    if [ "$SHELL" != "$zsh_path" ]; then
+        if sudo chsh -s "$zsh_path" "$USER" 2>/dev/null; then
+            log "Default shell changed to zsh"
+        else
+            warn "Could not change default shell. Run manually: sudo chsh -s $zsh_path"
+        fi
+    else
+        log "Default shell is already zsh"
+    fi
+}
+
 install_kitty() {
     log "--- Setting up Kitty ---"
     if [ -d "$DOTFILES_DIR/config/kitty" ]; then
@@ -292,6 +306,7 @@ EOF
 
     install_packages
     install_omz
+    set_default_shell
     install_shell_configs
     install_kitty
     install_zed
