@@ -26,10 +26,12 @@ unset rc
 
 alias dbms="docker exec -e MYSQL_PWD=root mariadb-lab mysql -uroot dbms_lab"
 
-# NPM global bin (added by Qwen Code installer)
+# NPM global bin
 export PATH="$HOME/.npm-global/bin:$PATH"
-export PATH="$(npm config get prefix)/bin:$PATH"
+if command -v npm &>/dev/null; then
+    export PATH="$(npm config get prefix)/bin:$PATH"
+fi
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:~/go/bin
 
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

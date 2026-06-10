@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+shopt -s nullglob
+
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="$DOTFILES_DIR/bootstrap.log"
@@ -11,6 +13,7 @@ err()  { log "ERROR: $*"; exit 1; }
 
 link_file() {
     local src="$1" dst="$2"
+    [ -e "$src" ] || [ -L "$src" ] || { warn "Source not found: $src"; return 1; }
     if [ -e "$dst" ] || [ -L "$dst" ]; then
         if [ "$(readlink -f "$dst")" = "$src" ]; then
             log "SKIP: $dst already linked to repo"
@@ -48,7 +51,7 @@ install_shell_configs() {
             link_file "$DOTFILES_DIR/home/$f" "$HOME/$f"
         fi
     done
-    if [ -f "$DOTFILES_DIR/home/cargo_env" ]; then
+    if [ -f "$DOTFILES_DIR/home/cargo_env" ] && command -v cargo &>/dev/null; then
         link_file "$DOTFILES_DIR/home/cargo_env" "$HOME/.cargo/env"
     fi
 }
@@ -61,6 +64,10 @@ install_omz() {
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true
     fi
     ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+    if [ ! -d "$ZSH_CUSTOM" ]; then
+        warn "Oh My Zsh not installed. Skipping Powerlevel10k and plugins."
+        return
+    fi
     if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
         git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
         log "Installed Powerlevel10k"
@@ -98,7 +105,9 @@ install_gtk() {
             done
             if [ -d "$DOTFILES_DIR/config/$ver/assets" ]; then
                 mkdir -p "$HOME/.config/$ver/assets"
-                cp -rn "$DOTFILES_DIR/config/$ver/assets/"* "$HOME/.config/$ver/assets/" 2>/dev/null || true
+                for asset in "$DOTFILES_DIR/config/$ver/assets/"*; do
+                    [ -f "$asset" ] && cp -n "$asset" "$HOME/.config/$ver/assets/"
+                done
             fi
         fi
     done
@@ -120,13 +129,16 @@ install_aurorae() {
     log "--- Installing Layan window decoration ---"
     if [ -d "$DOTFILES_DIR/aurorae" ]; then
         for theme_dir in "$DOTFILES_DIR/aurorae/"*/; do
+            [ -d "$theme_dir" ] || continue
             theme_name="$(basename "$theme_dir")"
             target="$HOME/.local/share/aurorae/themes/$theme_name"
             if [ -d "$target" ]; then
                 log "SKIP: Aurorae theme $theme_name already installed"
             else
                 mkdir -p "$target"
-                cp -r "$theme_dir"* "$target/"
+                for f in "$theme_dir"*; do
+                    cp -r "$f" "$target/"
+                done
                 log "Installed aurorae theme: $theme_name"
             fi
         done
@@ -140,9 +152,11 @@ install_krohnkite() {
         log "Krohnkite already installed"
     else
         mkdir -p "$kwin_scripts"
-        git clone --depth=1 https://github.com/esjeon/krohnkite.git "$kwin_scripts/krohnkite" 2>/dev/null || \
+        if git clone --depth=1 https://github.com/esjeon/krohnkite.git "$kwin_scripts/krohnkite"; then
+            log "Installed Krohnkite"
+        else
             warn "Could not clone Krohnkite. Install manually from https://github.com/esjeon/krohnkite"
-        log "Installed Krohnkite"
+        fi
     fi
 }
 
@@ -182,7 +196,7 @@ install_wallpaper() {
             fi
         done
         local first_wp
-        first_wp="$(ls "$DOTFILES_DIR/wallpapers/"* | head -1)"
+        first_wp="$(find "$DOTFILES_DIR/wallpapers/" -maxdepth 1 -type f | head -1)"
         if [ -n "$first_wp" ] && command -v plasma-apply-wallpaperimage &>/dev/null; then
             plasma-apply-wallpaperimage "$first_wp" 2>/dev/null && log "Applied wallpaper" || warn "Could not set wallpaper"
         fi
@@ -214,23 +228,23 @@ install_chrome() {
     log "--- Setting up Firefox chrome ---"
     if [ -d "$DOTFILES_DIR/chrome" ]; then
         local chrome_dir="$HOME/.mozilla/firefox"
-        if ls "$chrome_dir/"*.default-release*/chrome/ 1>/dev/null 2>&1; then
-            for profile in "$chrome_dir/"*.default*; do
-                if [ -d "$profile" ]; then
-                    target="$profile/chrome"
-                    if [ -L "$target" ] && [ "$(readlink -f "$target")" = "$(readlink -f "$DOTFILES_DIR/chrome")" ]; then
-                        log "SKIP: chrome already linked for $(basename "$profile")"
-                    else
-                        if [ -d "$target" ]; then
-                            mkdir -p "$BACKUP_DIR"
-                            mv "$target" "$BACKUP_DIR/chrome-$(basename "$profile")"
-                        fi
-                        ln -sf "$DOTFILES_DIR/chrome" "$target"
-                        log "LINKED chrome for $(basename "$profile")"
-                    fi
+        local found=false
+        for profile in "$chrome_dir/"*.default*; do
+            [ -d "$profile" ] || continue
+            found=true
+            target="$profile/chrome"
+            if [ -L "$target" ] && [ "$(readlink -f "$target")" = "$(readlink -f "$DOTFILES_DIR/chrome")" ]; then
+                log "SKIP: chrome already linked for $(basename "$profile")"
+            else
+                if [ -d "$target" ]; then
+                    mkdir -p "$BACKUP_DIR"
+                    mv "$target" "$BACKUP_DIR/chrome-$(basename "$profile")"
                 fi
-            done
-        else
+                ln -sf "$DOTFILES_DIR/chrome" "$target"
+                log "LINKED chrome for $(basename "$profile")"
+            fi
+        done
+        if ! $found; then
             warn "No Firefox profile found. Skipping chrome theme."
         fi
     fi
@@ -239,11 +253,11 @@ install_chrome() {
 install_packages() {
     log "--- Installing system packages ---"
     if command -v dnf &>/dev/null; then
-        sudo dnf install -y zsh git curl kitty 2>/dev/null || warn "Some packages failed to install"
+        sudo dnf install -y zsh git curl kitty || warn "Package install failed (may need sudo password)"
     elif command -v apt &>/dev/null; then
-        sudo apt update && sudo apt install -y zsh git curl kitty 2>/dev/null || warn "Some packages failed to install"
+        sudo apt update && sudo apt install -y zsh git curl kitty || warn "Package install failed (may need sudo password)"
     elif command -v pacman &>/dev/null; then
-        sudo pacman -S --noconfirm zsh git curl kitty 2>/dev/null || warn "Some packages failed to install"
+        sudo pacman -S --noconfirm zsh git curl kitty || warn "Package install failed (may need sudo password)"
     else
         warn "Unknown package manager. Install zsh, git, curl, kitty manually."
     fi
