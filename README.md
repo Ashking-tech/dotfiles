@@ -28,7 +28,7 @@ cd ~/dotfiles
 | Category | Contents |
 |----------|----------|
 | **Shell** | `.zshrc` (Oh My Zsh + Powerlevel10k), `.bashrc`, `.p10k.zsh`, `.profile` |
-| **Git** | `.gitconfig` (user Ashking, email Ashking21@proton.me) |
+| **Git** | `.gitconfig` (user identity + LFS) |
 | **Terminal** | Kitty config with Base2Tone Lavender Dark theme, 80% opacity, blur |
 | **Editor** | Zed with Catppuccin Mocha dark theme, Vim mode, 16px font |
 | **GTK** | Dark Breeze theme, Colloid-Grey-Dark icons, WhiteSur cursors |

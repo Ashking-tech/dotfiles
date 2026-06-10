@@ -40,5 +40,8 @@ else
     git clone --depth=1 "$REPO_URL" "$DOTFILES_DIR"
 fi
 
+echo "==> Installing apps..."
+"$DOTFILES_DIR/apps.sh" || echo "WARNING: Some apps failed to install, continuing..."
+
 echo "==> Running bootstrap..."
 exec "$DOTFILES_DIR/bootstrap.sh"
