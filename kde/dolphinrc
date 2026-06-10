@@ -1,0 +1,20 @@
+[ExtractDialog]
+1920x1080 screen: Height=540
+1920x1080 screen: Width=1256
+2 screens: Height=480
+2 screens: Width=892
+DirHistory[$e]=$HOME/Documents/,$HOME/Projects/
+
+[General]
+Version=202
+ViewPropsTimestamp=2026,4,11,16,7,42.613
+
+[IconsMode]
+PreviewSize=112
+
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22
+
+[MainWindow]
+MenuBar=Disabled
